@@ -1,69 +1,81 @@
-[README.md](https://github.com/user-attachments/files/28810742/README.md)
 # Milestone 1A — Transformer Encoder Implementation
 
 ## Objective
-
 Implement the core components of a Transformer encoder from scratch and verify correctness using a small subset of the dataset.
 
 ## Implemented Components
+* **Scaled Dot-Product Attention**
+* **Multi-Head Attention** (custom implementation)
+* **Transformer Encoder Block**
+* **Position-wise Feed Forward Network (FFN)**
+* **Learned Positional Embedding**
+* **Transformer-based Classifier**
 
-- Scaled Dot-Product Attention
-- Multi-Head Attention (custom implementation)
-- Transformer Encoder Block
-- Learned Positional Embedding
-- Transformer Classifier (classification head with mean pooling)
+---
 
-## Files
+## Run Instructions
 
-| File | Description |
-| --- | --- |
-| `Multihead__milestone1t_fixed.ipynb` | Main notebook: model implementation, unit tests, preprocessing, and dry run |
-| `config.py` | All hyperparameters and the global random seed |
-| `README.md` | This file |
+### Step 1: Navigate to Folder
+```bash
+cd milestone1A
+```
 
-## How to Run
+### Step 2: Run the Code
 
-1. Open `Multihead__milestone1t_fixed.ipynb` in Google Colab (GPU runtime recommended).
-2. Run all cells top-to-bottom (**Runtime → Run all**). The notebook will:
-   - clone this repository and load `config.py`,
-   - run the correctness unit tests (shape, mask, attention-sum, gradient flow),
-   - download the WELFake dataset via `kagglehub`,
-   - preprocess, split (80/10/10), and encode the data,
-   - execute the dry run (5,000 train / 500 val samples, 5 epochs) and report metrics.
+#### Option A — Jupyter Notebook (Recommended)
+```bash
+jupyter notebook
+```
+Open `multihead__milestone1t.ipynb` and run all cells sequentially.
 
-## Reproducibility
+#### Option B — Python Script
+```bash
+python multihead__milestone1t.py
+```
 
-All experiments use a fixed random seed (`SEED = 42`, defined in `config.py`),
-applied at the top of the notebook **before any data loading or model creation**:
+---
 
-- **Python** `random.seed(SEED)`
-- **NumPy** `np.random.seed(SEED)`
-- **PyTorch (CPU & CUDA)** `torch.manual_seed(SEED)` / `torch.cuda.manual_seed_all(SEED)`
-- **cuDNN** `deterministic = True`, `benchmark = False`
+## Pipeline
 
-The seed also covers every random operation downstream:
+### 1. Data Processing
+* Load a small subset of the dataset.
+* Apply preprocessing: text cleaning, tokenization, and vocabulary construction.
+* Convert tokens to numerical indices.
+* Apply padding and truncation.
 
-| Source of randomness | How it is seeded |
-| --- | --- |
-| Train/val/test split | `train_test_split(..., random_state=config.SEED)` |
-| DataLoader shuffling | `DataLoader(..., generator=torch.Generator().manual_seed(SEED))` |
-| Weight initialization | global `torch.manual_seed(SEED)` |
-| Dropout | global `torch.manual_seed(SEED)` |
+### 2. Model Forward Pass
+* Input -> Embedding layer
+* Add positional embeddings
+* Pass through Transformer encoder block:
+  * Multi-Head Attention
+  * Feed Forward Network
+* Apply mean pooling
+* Pass through classification layer
 
-Re-running the notebook top-to-bottom therefore reproduces the reported losses,
-accuracy, and confusion matrix exactly.
+### 3. Training (Subset Validation)
+* **Loss:** `CrossEntropyLoss`
+* **Optimizer:** `Adam`
+* Small number of iterations for validation
 
-**Verification:** two consecutive seeded runs of the dry-run training loop produce
-identical per-epoch losses, while unseeded runs diverge from the first epoch.
+---
 
-*Note:* exact bit-level results are guaranteed on the same hardware/software stack
-(e.g. the same Colab GPU runtime). Across different GPU models, minor floating-point
-differences in CUDA kernels can cause negligible variations.
+## Validation Checks
+The implementation is verified using:
+* **Tensor shape checks** across all layers.
+* **Attention weight normalization** (sum ≈ 1 along correct dimension).
+* **Mask correctness** (padding behavior).
+* **Gradient flow validation** (loss decreases on small batch).
 
-## Evaluation Convention
+## Expected Output
+* Training loss values.
+* Correct tensor shape logs.
+* Attention weights behaving as expected.
+* Successful forward and backward pass.
 
-In this task, **Fake (0) is treated as the positive class**, since the system's
-objective is detecting fake news. Accordingly, in the confusion-matrix breakdown:
+---
 
-- **False Negative** = a fake article predicted as real (a missed fake — the critical error)
-- **False Positive** = a real article predicted as fake (a false alarm)
+> ### Notes
+> * This milestone focuses on correctness, not performance.
+> * Uses a small subset to ensure fast debugging.
+> * No built-in Transformer modules are used (implemented from scratch).
+> * Serves as the foundation for Milestone 1B.
